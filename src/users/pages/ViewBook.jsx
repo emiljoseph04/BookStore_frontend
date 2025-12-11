@@ -3,8 +3,9 @@ import Header from '../../common/components/Header'
 import { FaRegEye } from "react-icons/fa";
 import { FaBackward } from "react-icons/fa";
 import { Link, useParams } from 'react-router-dom';
-import { getABookAPI } from '../../services/allAPI';
+import { getABookAPI, makePaymentAPI } from '../../services/allAPI';
 import SERVERURL from '../../services/serverURL';
+import {loadStripe} from '@stripe/stripe-js';
 
 function ViewBook() {
   const [modalStatus, setModalStatus] = useState(false)
@@ -29,6 +30,31 @@ function ViewBook() {
     }
   }
   console.log(bookDetails);
+
+  const handlePurchase=async()=>{
+    const stripe = await loadStripe('pk_test_51ScgVP3fyqD7hHV6Cemuq7c5kOE8RORE7L9nc5Lkx6NJEsJhjZib943sYM050BaVzQnwlspvqXf1GKwdnHAuyFty00MrBUge7B');
+    console.log(stripe);
+    const token=sessionStorage.getItem("token")
+    if(token){
+      //reqHeader
+      const reqHeader = {
+        "Authorization": `Bearer ${token}`
+      }
+      try {
+        const result=await makePaymentAPI(bookDetails,reqHeader)
+        console.log(result);
+        const checkoutSessionUrl=result.data.checkoutSessionUrl
+        if(checkoutSessionUrl){
+          //redirect
+          window.location.href=checkoutSessionUrl
+        }        
+      } catch (error) {
+        console.log(error);
+        
+      }
+    }
+    
+  }
   useEffect(() => {
     getABook()
   }, [])
@@ -61,7 +87,7 @@ function ViewBook() {
               <p className='text-justify mt-10'>{bookDetails?.abstract}</p>
               <div className='mt-10 flex justify-end'>
                 <Link to={"/all-books"} className='flex px-4 py-3 bg-blue-800 rounded text-white hover:bg-white hover:text-blue-800 hover:border hover:border-blue-800'><FaBackward className='mt-1 me-2' />Back</Link>
-                <button className='flex px-4 py-3 bg-green-800 rounded text-white hover:bg-white hover:text-green-800 hover:border hover:border-green-800 ms-5'>Buy ₹{bookDetails?.dPrice}</button>
+                <button onClick={handlePurchase} type='button' className='flex px-4 py-3 bg-green-800 rounded text-white hover:bg-white hover:text-green-800 hover:border hover:border-green-800 ms-5'>Buy ₹</button>
 
               </div>
             </div>

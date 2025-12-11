@@ -63,9 +63,9 @@ function LandingPage() {
       <section className='md:px-40 p-5 flex flex-col justify-center items-center'>
         <h1>NEW ARRIVALS</h1>
         <h1>Explore our latest colletion</h1>
-        {homeBook.length > 0 ?
+        {homeBook?.length > 0 ?
           <div className='md:grid grid-cols-4 w-full mt-5'>
-            {homeBook.map((item) => (
+            {homeBook?.map((item) => (
               <div className='p-3'>
                 <div className='shadow p-3 rounded'>
                   <img height={"300px"} width={"100%"} src={item.imageUrl} />

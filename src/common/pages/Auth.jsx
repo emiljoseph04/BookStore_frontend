@@ -1,9 +1,12 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import { FaCircleUser } from 'react-icons/fa6'
 import { Link, useNavigate } from 'react-router-dom'
-import { loginAPI, registerAPI } from '../../services/allAPI'
+import { googleLoginAPI, loginAPI, registerAPI } from '../../services/allAPI'
 import { toast } from 'react-toastify'
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
+import { userAuthContext } from '../../context/AuthContext'
 
 function Auth({ register }) {
   const [showPassword, setShowPassword] = useState(false)
@@ -14,6 +17,8 @@ function Auth({ register }) {
 
   })
   console.log(userDetails);
+
+  const {setAuthorisedUser}=useContext(userAuthContext)
 
   const navigate = useNavigate()
 
@@ -60,14 +65,21 @@ function Auth({ register }) {
       console.log(result);
       if (result.status == 200) {
         toast.success(`Login Successfully`)
+        setAuthorisedUser(true)
         sessionStorage.setItem("existingUser", JSON.stringify(result.data.existingUser));
         sessionStorage.setItem("token", result.data.token);
+        if (result.data.existingUser.role == "admin") {
+          navigate("/admin-home")
+        }
+        else {
+          navigate("/")
+        }
         setUserDetails({
           username: "",
           email: "",
           password: ""
         })
-        navigate("/")
+
       } else if (result.status == 404) {
         toast.warning(result.response.data)
         setUserDetails({
@@ -91,6 +103,36 @@ function Auth({ register }) {
 
 
   }
+  const handleGoogleLogin = async (credentialResponse) => {
+    console.log(credentialResponse.credential);
+    const googleData = jwtDecode(credentialResponse.credential)
+    console.log(googleData);
+    try {
+      const result = await googleLoginAPI({ password: "googlepassword", email: googleData.email, username: googleData.name, profile: googleData.picture })
+      console.log(result);
+      if (result.status == 200) {
+        sessionStorage.setItem("existingUser", JSON.stringify(result.data.existingUser));
+        sessionStorage.setItem("token", result.data.token);
+        toast.success(`Login Successfully`)
+        setAuthorisedUser(true)
+        if (result.data.existingUser.role == "admin") {
+          navigate("/admin-home")
+        }
+        else {
+          navigate("/")
+        }
+      }
+      else {
+        toast.error(`Something Went Wrong`)
+      }
+
+    } catch (error) {
+      console.log(error);
+
+    }
+
+  }
+
   return (
     <>
       <div className='w-full min-h-screen flex justify-center items-center flex-col bg-[url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJfo7sSzB9Vzxn4UrN8o0HmqkqoXxW4fXm5Q&s")] bg-cover bg-center'>
@@ -132,6 +174,19 @@ function Auth({ register }) {
               </div>
               <div>
                 {/* google authentication */}
+                {!register &&
+                  <div className='mt-3'>
+                    <GoogleLogin
+                      onSuccess={credentialResponse => {
+                        console.log(credentialResponse);
+                        handleGoogleLogin(credentialResponse)
+                      }}
+                      onError={() => {
+                        console.log('Login Failed');
+                      }}
+                    />
+                  </div>
+                }
               </div>
               <div className='mt-3'>
                 {register ? <p>Are you Already a user <Link className='text-blue-400' to={"/login"} >Login</Link> </p> :

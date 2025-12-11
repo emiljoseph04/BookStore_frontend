@@ -1,9 +1,47 @@
-import React from 'react'
+import React, { useState,useEffect } from 'react'
 import AdminHeader from '../components/AdminHeader'
 import AdminSidebar from '../components/AdminSidebar'
+import {getAllBooksAdminAPI, getAllUsersAPI } from '../../services/allAPI'
+
 import { FaBook, FaUserGraduate, FaUsers } from 'react-icons/fa'
 
 function AdminHome() {
+  const [bookCount,setBookCount]=useState(0)
+  const [userCount,setUserCount]=useState(0)
+    const [token, setToken] = useState("")
+
+
+  const getCounts = async () => {
+    try {
+      //reqHeader
+      const reqHeader = {
+        "Authorization": `Bearer ${token}`
+      }
+      const books = await getAllBooksAdminAPI()
+      setBookCount(books?.data?.length)
+
+      const users = await getAllUsersAPI(reqHeader)
+      setUserCount(users?.data?.length)
+    }
+    catch(error){
+      console.log(error);
+    }
+  }
+
+  useEffect(()=>{
+    if (sessionStorage.getItem("token")) {
+      setToken(sessionStorage.getItem("token"))
+    }
+  },[])
+
+  useEffect(()=>{
+  if(token){
+    getCounts()
+  }
+  },[token])
+
+
+
   return (
     <div>
       <AdminHeader/>
@@ -17,7 +55,7 @@ function AdminHome() {
               <div className='grid grid-cols-[1fr_3fr] bg-blue-700 rounded p-4'>
                 <div className='flex justify-center items-center'><FaBook className='text-3xl'/></div>
                   <div>
-                    <h1>Total No:of Books:<span className=''>85</span></h1>
+                    <h1>Total No:of Books:<span className=''>{bookCount}</span></h1>
                     
                   </div>
               </div>
@@ -26,7 +64,7 @@ function AdminHome() {
               <div className='grid grid-cols-[1fr_3fr] bg-green-700 rounded p-4'>
                 <div className='flex justify-center items-center'><FaUsers className='text-3xl'/></div>
                   <div>
-                    <h1>Total No:of Users:<span className=''>85</span></h1>
+                    <h1>Total No:of Users:<span className=''>{userCount}</span></h1>
                     
                   </div>
               </div>
